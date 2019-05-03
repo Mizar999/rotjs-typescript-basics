@@ -1,3 +1,4 @@
+/*
 import { Display } from "rot-js/lib/index";
 
 let options = {
@@ -20,3 +21,9 @@ for (let x = 0; x < options.width; ++x) {
 }
 
 display.draw(options.width >> 1, options.height >> 1, "@", "goldenrod", "black");
+*/
+import { Game } from "./game";
+
+document.body.onload = () => {
+    var game = new Game();
+}

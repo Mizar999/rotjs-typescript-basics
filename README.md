@@ -5,7 +5,8 @@ Using the rot.js library with TypeScript in a basic example.
 ## Resources
 
 - [rot.js - Roguelike Toolkit](https://github.com/ondras/rot.js)
-- [Frostlike - 7 Day Roguelike Challenge 2017](https://github.com/maqqr/7drl2017)
+- [RogueBasin - rot.js Tutorial](http://www.roguebasin.roguelikedevelopment.org/index.php?title=Rot.js_tutorial)
+- [Frostlike - 7 Day Roguelike Challenge 2017 entry](https://github.com/maqqr/7drl2017)
 
 ## Project setup
 
