@@ -1,30 +1,43 @@
-import { Display, Map, RNG, Engine, Scheduler } from "rot-js/lib/index";
+import { Display, Map, RNG, Scheduler } from "rot-js/lib/index";
+import Simple from "rot-js/lib/scheduler/simple";
+
 import { Player } from "./player";
 import { Point } from "./point";
+import { Symbol } from "./symbol";
 import { Actor } from "./actor";
-import Simple from "rot-js/lib/scheduler/simple";
 import { Pedro } from "./pedro";
 import { GameState } from "./game-state";
+import { StatusLine } from "./status-line";
 
 export class Game {
     private display: Display;
     private scheduler: Simple;
-    private map: { [key: string]: string };
+    private map: { [key: string]: Symbol };
     private freeCells: string[];
+    private statusLine: StatusLine;
+
     private player: Player;
     private pedro: Pedro;
-    private ananasKey: string;
+
+    private gameSize: { width: number, height: number };
+    private mapSize: { width: number, height: number };
+    private statusLinePosition: Point;
+    private pineappleKey: string;
 
     private foregroundColor = "white";
     private backgroundColor = "black";
-    private floor = ".";
-    private box = "*";
+    private floor = new Symbol(".");
+    private box = new Symbol("*");
     private maximumBoxes = 10;
 
-    constructor(private width: number = 80, private height: number = 25) {
+    constructor() {
+        this.gameSize = { width: 75, height: 25 };
+        this.mapSize = { width: this.gameSize.width, height: this.gameSize.height - 3 };
+        this.statusLinePosition = new Point(0, this.gameSize.height - 3);
+
         this.display = new Display({
-            width: this.width,
-            height: this.height,
+            width: this.gameSize.width,
+            height: this.gameSize.height,
             fontSize: 20
         });
         document.body.appendChild(this.display.getContainer());
@@ -33,29 +46,38 @@ export class Game {
         this.mainLoop();
     }
 
-    draw(x: number, y: number, character: string, color?: string, backgroundColor?: string): void {
-        let foreground = color || this.foregroundColor;
-        let background = backgroundColor || this.backgroundColor;
-        this.display.draw(x, y, character, foreground, background);
+    draw(position: Point, symbol: Symbol): void {
+        let foreground = symbol.foregroundColor || this.foregroundColor;
+        let background = symbol.backgroundColor || this.backgroundColor;
+        this.display.draw(position.x, position.y, symbol.character, foreground, background);
+    }
+
+    drawText(x: number, y: number, text: string, maxWidth?: number) {
+        this.display.drawText(x, y, text, maxWidth);
     }
 
     mapIsPassable(x: number, y: number): boolean {
         return (x + "," + y) in this.map;
     }
 
-    getCharacterAt(key: string): string {
+    getCharacterAt(key: string): Symbol {
         return this.map[key];
     }
 
     getPlayerPosition(): Point {
-        return this.player.getPosition();
+        return this.player.position;
     }
 
     checkBox(key: string): boolean {
         if (this.map[key] !== this.box) {
             alert("There is no box here!");
-        } else if (key === this.ananasKey) {
-            alert("Hooray! You found an ananas and won this game.");
+            return;
+        }
+
+        // TODO update status line
+
+        if (key === this.pineappleKey) {
+            alert("Hooray! You found a pineapple.");
             return true;
         } else {
             alert("This box is empty.");
@@ -65,8 +87,8 @@ export class Game {
     private startNewGame(): void {
         this.map = {};
         this.freeCells = [];
-        this.display.clear();
 
+        this.display.clear();
         this.generateMap();
         this.generateBoxes();
         this.drawMap();
@@ -76,6 +98,8 @@ export class Game {
         this.scheduler = new Scheduler.Simple();
         this.scheduler.add(this.player, true);
         this.scheduler.add(this.pedro, true);
+
+        this.createStatusLine();
     }
 
     private async mainLoop(): Promise<any> {
@@ -87,6 +111,11 @@ export class Game {
                 break;
             }
             gameState = await actor.act();
+            if (actor.isPlayer) {
+                this.statusLine.turns += 1;
+                this.statusLine.draw();
+            }
+
             if (gameState) {
                 if (gameState.isGameOver) {
                     this.startNewGame();
@@ -96,7 +125,7 @@ export class Game {
     }
 
     private generateMap(): void {
-        let digger = new Map.Digger(this.width, this.height);
+        let digger = new Map.Digger(this.mapSize.width, this.mapSize.height);
         digger.create(this.diggerCallback.bind(this));
     }
 
@@ -116,7 +145,7 @@ export class Game {
             key = this.getRandomFreeCell();
             this.map[key] = this.box;
             if (!boxes) {
-                this.ananasKey = key;
+                this.pineappleKey = key;
             }
         }
     }
@@ -124,14 +153,19 @@ export class Game {
     private createBeing(what: any): any {
         let key = this.getRandomFreeCell();
         let point = this.mapKeyToPoint(key);
-        return new what(this, point.x, point.y);
+        return new what(this, point);
+    }
+
+    private createStatusLine(): void {
+        this.statusLine = new StatusLine(this, this.statusLinePosition.x, this.statusLinePosition.y, this.gameSize.width, { maxBoxes: this.maximumBoxes });
+        this.statusLine.draw();
     }
 
     private drawMap(): void {
         let point: Point;
         for (let key in this.map) {
             point = this.mapKeyToPoint(key);
-            this.draw(point.x, point.y, this.getCharacterAt(key));
+            this.draw(point, this.getCharacterAt(key));
         }
     }
 
