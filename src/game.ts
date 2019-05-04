@@ -3,6 +3,8 @@ import { Player } from "./player";
 import { Point } from "./point";
 import { Actor } from "./actor";
 import Simple from "rot-js/lib/scheduler/simple";
+import { Pedro } from "./pedro";
+import { GameState } from "./game-state";
 
 export class Game {
     private display: Display;
@@ -10,6 +12,8 @@ export class Game {
     private map: { [key: string]: string };
     private freeCells: string[];
     private player: Player;
+    private pedro: Pedro;
+    private ananasKey: string;
 
     private foregroundColor = "white";
     private backgroundColor = "black";
@@ -21,11 +25,12 @@ export class Game {
         this.display = new Display({
             width: this.width,
             height: this.height,
-            fontSize: 18
+            fontSize: 20
         });
         document.body.appendChild(this.display.getContainer());
 
         this.startNewGame();
+        this.mainLoop();
     }
 
     draw(x: number, y: number, character: string, color?: string, backgroundColor?: string): void {
@@ -34,36 +39,59 @@ export class Game {
         this.display.draw(x, y, character, foreground, background);
     }
 
-    mapKeyExists(key: string): boolean {
-        return key in this.map;
+    mapIsPassable(x: number, y: number): boolean {
+        return (x + "," + y) in this.map;
     }
 
     getCharacterAt(key: string): string {
         return this.map[key];
     }
 
+    getPlayerPosition(): Point {
+        return this.player.getPosition();
+    }
+
+    checkBox(key: string): boolean {
+        if (this.map[key] !== this.box) {
+            alert("There is no box here!");
+        } else if (key === this.ananasKey) {
+            alert("Hooray! You found an ananas and won this game.");
+            return true;
+        } else {
+            alert("This box is empty.");
+        }
+    }
+
     private startNewGame(): void {
         this.map = {};
         this.freeCells = [];
+        this.display.clear();
 
         this.generateMap();
         this.generateBoxes();
         this.drawMap();
 
-        this.createPlayer();
+        this.player = this.createBeing(Player);
+        this.pedro = this.createBeing(Pedro);
         this.scheduler = new Scheduler.Simple();
         this.scheduler.add(this.player, true);
-        this.mainLoop();
+        this.scheduler.add(this.pedro, true);
     }
 
     private async mainLoop(): Promise<any> {
         let actor: Actor;
+        let gameState: GameState;
         while (true) {
             actor = this.scheduler.next();
             if (!actor) {
                 break;
             }
-            await actor.act();
+            gameState = await actor.act();
+            if (gameState) {
+                if (gameState.isGameOver) {
+                    this.startNewGame();
+                }
+            }
         }
     }
 
@@ -87,13 +115,16 @@ export class Game {
         for (let boxes = 0; boxes < this.maximumBoxes; ++boxes) {
             key = this.getRandomFreeCell();
             this.map[key] = this.box;
+            if (!boxes) {
+                this.ananasKey = key;
+            }
         }
     }
 
-    private createPlayer(): void {
+    private createBeing(what: any): any {
         let key = this.getRandomFreeCell();
         let point = this.mapKeyToPoint(key);
-        this.player = new Player(this, point.x, point.y);
+        return new what(this, point.x, point.y);
     }
 
     private drawMap(): void {
