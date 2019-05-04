@@ -23,14 +23,16 @@ export class Pedro implements Actor {
         this.path = [];
         astar.compute(this.x, this.y, this.pathCallback.bind(this));
         this.path.shift(); // remove Pedros position
-        if(this.path.length == 1) {
+        if (this.path.length <= 1) {
             alert("Game over - you were captured by Pedro!");
             gameState.isGameOver = true;
         }
-        
-        this.game.draw(this.x, this.y, this.game.getCharacterAt(this.x + "," + this.y))
-        this.x = this.path[0].x;
-        this.y = this.path[0].y;
+
+        if (this.path.length > 0) {
+            this.game.draw(this.x, this.y, this.game.getCharacterAt(this.x + "," + this.y))
+            this.x = this.path[0].x;
+            this.y = this.path[0].y;
+        }
         this.draw();
 
         return Promise.resolve(gameState);
