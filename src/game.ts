@@ -31,7 +31,8 @@ export class Game {
     private foregroundColor = "white";
     private backgroundColor = "black";
     private floor = new Glyph(".");
-    private box = new Glyph("*");
+    private newBox = new Glyph("#", "#654321");
+    private searchedBox = new Glyph("#", "#666");
     private maximumBoxes = 10;
 
     constructor() {
@@ -80,12 +81,17 @@ export class Game {
     }
 
     checkBox(key: string): boolean {
-        if (this.map[key] !== this.box) {
-            this.messageLog.appendText("There is no box here!");
+        if (this.map[key] !== this.newBox) {
+            if (this.map[key] === this.searchedBox) {
+                this.messageLog.appendText("This box is still empty.");
+            } else {
+                this.messageLog.appendText("There is no box here!");
+            }
             return;
         }
 
-        // TODO update status line
+        this.statusLine.boxes += 1;
+        this.map[key] = this.searchedBox;
 
         if (key === this.pineappleKey) {
             this.messageLog.appendText("Hooray! You found a pineapple.");
@@ -188,7 +194,7 @@ export class Game {
         let key: string;
         for (let boxes = 0; boxes < this.maximumBoxes; ++boxes) {
             key = this.getRandomFreeCell();
-            this.map[key] = this.box;
+            this.map[key] = this.newBox;
             if (!boxes) {
                 this.pineappleKey = key;
             }
