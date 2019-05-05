@@ -15,7 +15,7 @@ export class InputUtility {
     }
 
     private static processInput(event: KeyboardEvent, handleInput: (event: KeyboardEvent) => boolean): void {
-        if(handleInput(event)) {
+        if (handleInput(event)) {
             InputUtility.stopProcessing();
         }
     }

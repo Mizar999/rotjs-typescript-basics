@@ -41,7 +41,7 @@ export class Player implements Actor {
             }
             this.position = newPoint;
             validInput = true;
-        } else if(code === KEYS.VK_RETURN || code === KEYS.VK_SPACE) {
+        } else if (code === KEYS.VK_RETURN || code === KEYS.VK_SPACE) {
             this.game.checkBox(this.position.toKey());
             validInput = true;
         } else {

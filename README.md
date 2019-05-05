@@ -1,6 +1,6 @@
 # rot.js TypeScript basics
 
-Using the rot.js library with TypeScript in a basic example.
+A basic roguelike example built with rot.js and TypeScript. Playable at [](https://mizar999.github.io/rotjs-typescript-basics/)
 
 ## Resources
 
