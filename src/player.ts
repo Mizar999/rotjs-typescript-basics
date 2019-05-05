@@ -7,13 +7,13 @@ import { Glyph } from "./glyph";
 
 export class Player implements Actor {
     glyph: Glyph;
-    isPlayer: boolean;
+    type: string;
     private keyMap: { [key: number]: number }
     private processInputCallback: (event: KeyboardEvent) => any;
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("@", "#ff0");
-        this.isPlayer = true;
+        this.type = "player";
 
         this.keyMap = {};
         this.keyMap[KEYS.VK_NUMPAD8] = 0; // up
@@ -47,7 +47,7 @@ export class Player implements Actor {
             this.position = newPoint;
             validInput = true;
         } else if(code === KEYS.VK_RETURN || code === KEYS.VK_SPACE) {
-            gameState.isGameOver = this.game.checkBox(currentKey);
+            gameState.foundPineapple = this.game.checkBox(currentKey);
             validInput = true;
         } else {
             validInput = code === KEYS.VK_NUMPAD5; // Wait a turn

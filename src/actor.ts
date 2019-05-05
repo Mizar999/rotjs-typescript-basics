@@ -5,7 +5,7 @@ import { Glyph } from "./glyph";
 export interface Actor {
     position: Point;
     glyph: Glyph;
-    isPlayer: boolean;
+    type: string;
 
     act(): Promise<GameState>;
 }

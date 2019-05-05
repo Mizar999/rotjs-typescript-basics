@@ -1,3 +1,8 @@
 export class GameState {
-    isGameOver: boolean;
+    foundPineapple: boolean;
+    playerWasCaught: boolean;
+
+    isGameOver(): boolean {
+        return this.foundPineapple || this.playerWasCaught;
+    }
 }

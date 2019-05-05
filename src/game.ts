@@ -47,6 +47,8 @@ export class Game {
         });
         document.body.appendChild(this.display.getContainer());
 
+        this.createStatusLine();
+        this.createMessageLog();
         this.startNewGame();
         this.mainLoop();
     }
@@ -107,8 +109,8 @@ export class Game {
         this.scheduler.add(this.player, true);
         this.scheduler.add(this.pedro, true);
 
-        this.createStatusLine();
-        this.createActionLog();
+        this.messageLog.clear();
+        this.statusLine.boxes = 0;
 
         this.drawPanel();
     }
@@ -121,18 +123,23 @@ export class Game {
             if (!actor) {
                 break;
             }
+
             gameState = await actor.act();
-            if (actor.isPlayer) {
+            if (actor.type === "player") {
                 this.statusLine.turns += 1;
             }
-
+            if (gameState.foundPineapple) {
+                this.statusLine.pineapples += 1;
+            }
+            
             this.drawPanel();
 
-            if (gameState) {
-                if (gameState.isGameOver) {
-                    await this.waitForInput();
-                    this.startNewGame();
+            if (gameState.isGameOver()) {
+                await this.waitForInput();
+                if (gameState.playerWasCaught) {
+                    this.resetStatusLine();
                 }
+                this.startNewGame();
             }
         }
     }
@@ -198,7 +205,12 @@ export class Game {
         this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
     }
 
-    private createActionLog(): void {
+    private resetStatusLine(): void {
+        this.statusLine.reset();
+        this.statusLine.maxBoxes = this.maximumBoxes;
+    }
+
+    private createMessageLog(): void {
         this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
     }
 

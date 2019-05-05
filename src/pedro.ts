@@ -7,12 +7,12 @@ import { GameState } from "./game-state";
 
 export class Pedro implements Actor {
     glyph: Glyph;
-    isPlayer: boolean;
+    type: string;
     private path: Point[];
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("P", "#f00", "");
-        this.isPlayer = false;
+        this.type = "pedro";
     }
 
     act(): Promise<GameState> {
@@ -25,7 +25,7 @@ export class Pedro implements Actor {
         this.path.shift(); // remove Pedros position
         if (this.path.length <= 1) {
             this.game.appendText("Game over - you were captured by Pedro!");
-            gameState.isGameOver = true;
+            gameState.playerWasCaught = true;
         }
 
         if (this.path.length > 0) {
