@@ -93,6 +93,7 @@ export class Game {
         this.map[key] = this.searchedBox;
 
         if (key === this.pineappleKey) {
+            this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
             this.messageLog.appendText("Hooray! You found a pineapple.");
             this.gameState.foundPineapple = true;
         } else {
@@ -101,7 +102,8 @@ export class Game {
     }
 
     catchPlayer(): void {
-        this.messageLog.appendText("Game over - you were captured by Pedro!");
+        this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
+        this.messageLog.appendText(`Game over - you were captured by %c{${this.pedro.glyph.foregroundColor}}Pedro%c{}!`);
         this.gameState.playerWasCaught = true;
     }
 
@@ -124,9 +126,12 @@ export class Game {
         this.scheduler.add(this.player, true);
         this.scheduler.add(this.pedro, true);
 
-        this.gameState.reset();
-        this.messageLog.clear();
         this.statusLine.boxes = 0;
+        this.messageLog.clear();
+        if (!this.gameState.isGameOver() || this.gameState.playerWasCaught) {
+            this.writeHelpMessage();
+        }
+        this.gameState.reset();
 
         this.drawPanel();
     }
@@ -171,6 +176,18 @@ export class Game {
     private handleInput(event: KeyboardEvent): boolean {
         let code = event.keyCode;
         return code === KEYS.VK_SPACE || code === KEYS.VK_RETURN;
+    }
+
+    private writeHelpMessage(): void {
+        let helpMessage = [
+            `Find the pineapple in one of the %c{${this.newBox.foregroundColor}}boxes%c{}.`,
+            `Move with numpad, search %c{${this.newBox.foregroundColor}}box%c{} with 'spacebar' or 'return'.`,
+            `Watch out for %c{${this.pedro.glyph.foregroundColor}}Pedro%c{}!`
+        ];
+
+        for (let index = helpMessage.length - 1; index >= 0; --index) {
+            this.messageLog.appendText(helpMessage[index]);
+        }
     }
 
     private generateMap(): void {
