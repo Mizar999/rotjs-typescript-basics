@@ -1,6 +1,6 @@
 # rot.js TypeScript basics
 
-A basic roguelike example built with rot.js and TypeScript. Playable at [](https://mizar999.github.io/rotjs-typescript-basics/)
+A basic roguelike example built with rot.js and TypeScript. Playable at [https://mizar999.github.io/rotjs-typescript-basics/](https://mizar999.github.io/rotjs-typescript-basics/)
 
 ## Resources
 
