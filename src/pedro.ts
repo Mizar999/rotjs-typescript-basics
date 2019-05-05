@@ -15,8 +15,7 @@ export class Pedro implements Actor {
         this.type = "pedro";
     }
 
-    act(): Promise<GameState> {
-        let gameState = new GameState();
+    act(): Promise<any> {
         let playerPosition = this.game.getPlayerPosition();
         let astar = new Path.AStar(playerPosition.x, playerPosition.y, this.game.mapIsPassable.bind(this.game), { topology: 4 });
 
@@ -24,15 +23,14 @@ export class Pedro implements Actor {
         astar.compute(this.position.x, this.position.y, this.pathCallback.bind(this));
         this.path.shift(); // remove Pedros position
         if (this.path.length <= 1) {
-            this.game.appendText("Game over - you were captured by Pedro!");
-            gameState.playerWasCaught = true;
+            this.game.catchPlayer();
         }
 
         if (this.path.length > 0) {
             this.position = new Point(this.path[0].x, this.path[0].y);
         }
 
-        return Promise.resolve(gameState);
+        return Promise.resolve();
     }
 
     private pathCallback(x: number, y: number): void {

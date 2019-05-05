@@ -9,6 +9,7 @@ import { Pedro } from "./pedro";
 import { GameState } from "./game-state";
 import { StatusLine } from "./status-line";
 import { MessageLog } from "./message-log";
+import { InputUtility } from "./input-utility";
 
 export class Game {
     private display: Display;
@@ -25,7 +26,7 @@ export class Game {
     private mapSize: { width: number, height: number };
     private statusLinePosition: Point;
     private actionLogPosition: Point;
-    private processInputCallback: (event: KeyboardEvent) => Promise<any>;
+    private gameState: GameState;
 
     private pineappleKey: string;
     private foregroundColor = "white";
@@ -48,8 +49,10 @@ export class Game {
         });
         document.body.appendChild(this.display.getContainer());
 
-        this.createStatusLine();
-        this.createMessageLog();
+        this.gameState = new GameState();
+        this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
+        this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
+
         this.startNewGame();
         this.mainLoop();
     }
@@ -64,10 +67,6 @@ export class Game {
         this.display.drawText(position.x, position.y, text, maxWidth);
     }
 
-    appendText(text: string): void {
-        this.messageLog.appendText(text);
-    }
-
     mapIsPassable(x: number, y: number): boolean {
         return (x + "," + y) in this.map;
     }
@@ -80,7 +79,7 @@ export class Game {
         return this.player.position;
     }
 
-    checkBox(key: string): boolean {
+    checkBox(key: string): void {
         if (this.map[key] !== this.newBox) {
             if (this.map[key] === this.searchedBox) {
                 this.messageLog.appendText("This box is still empty.");
@@ -95,10 +94,20 @@ export class Game {
 
         if (key === this.pineappleKey) {
             this.messageLog.appendText("Hooray! You found a pineapple.");
-            return true;
+            this.gameState.foundPineapple = true;
         } else {
             this.messageLog.appendText("This box is empty.");
         }
+    }
+
+    catchPlayer(): void {
+        this.messageLog.appendText("Game over - you were captured by Pedro!");
+        this.gameState.playerWasCaught = true;
+    }
+
+    updateGameState(stateUpdate: any): void {
+        this.gameState = stateUpdate.foundPineapple || this.gameState.foundPineapple;
+        this.gameState = stateUpdate.playerWasCaught || this.gameState.playerWasCaught;
     }
 
     private startNewGame(): void {
@@ -115,6 +124,7 @@ export class Game {
         this.scheduler.add(this.player, true);
         this.scheduler.add(this.pedro, true);
 
+        this.gameState.reset();
         this.messageLog.clear();
         this.statusLine.boxes = 0;
 
@@ -123,26 +133,25 @@ export class Game {
 
     private async mainLoop(): Promise<any> {
         let actor: Actor;
-        let gameState: GameState;
         while (true) {
             actor = this.scheduler.next();
             if (!actor) {
                 break;
             }
 
-            gameState = await actor.act();
+            await actor.act();
             if (actor.type === "player") {
                 this.statusLine.turns += 1;
             }
-            if (gameState.foundPineapple) {
+            if (this.gameState.foundPineapple) {
                 this.statusLine.pineapples += 1;
             }
-            
+
             this.drawPanel();
 
-            if (gameState.isGameOver()) {
-                await this.waitForInput();
-                if (gameState.playerWasCaught) {
+            if (this.gameState.isGameOver()) {
+                await InputUtility.waitForInput(this.handleInput.bind(this));
+                if (this.gameState.playerWasCaught) {
                     this.resetStatusLine();
                 }
                 this.startNewGame();
@@ -159,20 +168,9 @@ export class Game {
         this.draw(this.pedro.position, this.pedro.glyph);
     }
 
-    private waitForInput(): Promise<any> {
-        return new Promise(resolve => {
-            this.processInputCallback = (event: KeyboardEvent) => this.processInput(event, resolve);
-            window.addEventListener("keydown", this.processInputCallback);
-        });
-    }
-
-    private processInput(event: KeyboardEvent, resolve: (value?: any) => void): Promise<any> {
+    private handleInput(event: KeyboardEvent): boolean {
         let code = event.keyCode;
-        if (code === KEYS.VK_SPACE || code === KEYS.VK_RETURN) {
-            window.removeEventListener("keydown", this.processInputCallback);
-            resolve();
-        }
-        return;
+        return code === KEYS.VK_SPACE || code === KEYS.VK_RETURN;
     }
 
     private generateMap(): void {
@@ -190,7 +188,6 @@ export class Game {
     }
 
     private generateBoxes(): void {
-        let index: number;
         let key: string;
         for (let boxes = 0; boxes < this.maximumBoxes; ++boxes) {
             key = this.getRandomFreeCell();
@@ -207,17 +204,9 @@ export class Game {
         return new what(this, point);
     }
 
-    private createStatusLine(): void {
-        this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
-    }
-
     private resetStatusLine(): void {
         this.statusLine.reset();
         this.statusLine.maxBoxes = this.maximumBoxes;
-    }
-
-    private createMessageLog(): void {
-        this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
     }
 
     private drawMap(): void {

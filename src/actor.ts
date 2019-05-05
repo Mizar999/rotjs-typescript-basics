@@ -7,5 +7,5 @@ export interface Actor {
     glyph: Glyph;
     type: string;
 
-    act(): Promise<GameState>;
+    act(): Promise<any>;
 }

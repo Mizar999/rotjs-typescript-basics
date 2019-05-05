@@ -4,12 +4,12 @@ import { Actor } from "./actor";
 import { Point } from "./point";
 import { GameState } from "./game-state";
 import { Glyph } from "./glyph";
+import { InputUtility } from "./input-utility";
 
 export class Player implements Actor {
     glyph: Glyph;
     type: string;
     private keyMap: { [key: number]: number }
-    private processInputCallback: (event: KeyboardEvent) => any;
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("@", "#ff0");
@@ -26,17 +26,12 @@ export class Player implements Actor {
         this.keyMap[KEYS.VK_NUMPAD7] = 7;
     }
 
-    act(): Promise<GameState> {
-        return new Promise(resolve => {
-            this.processInputCallback = (event: KeyboardEvent) => this.processInput(event, resolve);
-            window.addEventListener("keydown", this.processInputCallback);
-        });
+    act(): Promise<any> {
+        return InputUtility.waitForInput(this.handleInput.bind(this));
     }
 
-    private processInput(event: KeyboardEvent, resolve: (value?: any) => void): Promise<GameState> {
-        let gameState = new GameState();
+    private handleInput(event: KeyboardEvent): boolean {
         let validInput = false;
-        let currentKey = this.position.toKey();
         let code = event.keyCode;
         if (code in this.keyMap) {
             let diff = DIRS[8][this.keyMap[code]];
@@ -47,15 +42,11 @@ export class Player implements Actor {
             this.position = newPoint;
             validInput = true;
         } else if(code === KEYS.VK_RETURN || code === KEYS.VK_SPACE) {
-            gameState.foundPineapple = this.game.checkBox(currentKey);
+            this.game.checkBox(this.position.toKey());
             validInput = true;
         } else {
             validInput = code === KEYS.VK_NUMPAD5; // Wait a turn
         }
-
-        if (validInput) {
-            window.removeEventListener("keydown", this.processInputCallback);
-            resolve(gameState);
-        }
+        return validInput;
     }
 }
