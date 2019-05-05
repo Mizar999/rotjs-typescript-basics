@@ -1,4 +1,5 @@
 import { Game } from "./game";
+import { Point } from "./point";
 import { padRight, padLeft } from "./text-utility";
 
 export class StatusLine {
@@ -7,11 +8,10 @@ export class StatusLine {
     boxes: number;
     maxBoxes: number;
 
-    constructor(private game: Game, private x: number, private y: number, private maxWidth: number, params?: any) {
-        if(!params) {
+    constructor(private game: Game, private position: Point, private maxWidth: number, params?: any) {
+        if (!params) {
             params = {};
         }
-
         this.turns = params.turns || 0;
         this.pineapples = params.ananas || 0;
         this.boxes = params.boxes || 0;
@@ -20,6 +20,6 @@ export class StatusLine {
 
     draw(): void {
         let text = `turns: ${padRight(this.turns.toString(), 6)} pineapples: ${padRight(this.pineapples.toString(), 6)} boxes: ${padLeft(this.boxes.toString(), 2)} / ${padLeft(this.maxBoxes.toString(), 2)}`;
-        this.game.drawText(this.x, this.y, text, this.maxWidth);
+        this.game.drawText(this.position, text, this.maxWidth);
     }
 }

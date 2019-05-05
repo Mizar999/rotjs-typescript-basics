@@ -1,18 +1,18 @@
+import { KEYS, DIRS } from "rot-js";
 import { Game } from "./game";
 import { Actor } from "./actor";
-import { KEYS, DIRS } from "rot-js";
 import { Point } from "./point";
 import { GameState } from "./game-state";
-import { Symbol } from "./symbol";
+import { Glyph } from "./glyph";
 
 export class Player implements Actor {
-    symbol: Symbol;
+    glyph: Glyph;
     isPlayer: boolean;
     private keyMap: { [key: number]: number }
-    private callback: (event: KeyboardEvent) => any;
+    private processInputCallback: (event: KeyboardEvent) => any;
 
     constructor(private game: Game, public position: Point) {
-        this.symbol = new Symbol("@", "#ff0");
+        this.glyph = new Glyph("@", "#ff0");
         this.isPlayer = true;
 
         this.keyMap = {};
@@ -24,14 +24,12 @@ export class Player implements Actor {
         this.keyMap[KEYS.VK_NUMPAD1] = 5;
         this.keyMap[KEYS.VK_NUMPAD4] = 6; // left
         this.keyMap[KEYS.VK_NUMPAD7] = 7;
-
-        this.draw();
     }
 
     act(): Promise<GameState> {
         return new Promise(resolve => {
-            this.callback = (event: KeyboardEvent) => this.processInput(event, resolve);
-            window.addEventListener("keydown", this.callback);
+            this.processInputCallback = (event: KeyboardEvent) => this.processInput(event, resolve);
+            window.addEventListener("keydown", this.processInputCallback);
         });
     }
 
@@ -46,10 +44,7 @@ export class Player implements Actor {
             if (!this.game.mapIsPassable(newPoint.x, newPoint.y)) {
                 return;
             }
-
-            this.game.draw(this.position, this.game.getCharacterAt(currentKey))
             this.position = newPoint;
-            this.draw();
             validInput = true;
         } else if(code === KEYS.VK_RETURN || code === KEYS.VK_SPACE) {
             gameState.isGameOver = this.game.checkBox(currentKey);
@@ -59,12 +54,8 @@ export class Player implements Actor {
         }
 
         if (validInput) {
-            window.removeEventListener("keydown", this.callback);
+            window.removeEventListener("keydown", this.processInputCallback);
             resolve(gameState);
         }
-    }
-
-    private draw(): void {
-        this.game.draw(this.position, this.symbol);
     }
 }

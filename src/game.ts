@@ -1,20 +1,22 @@
-import { Display, Map, RNG, Scheduler } from "rot-js/lib/index";
+import { Display, Map, RNG, Scheduler, KEYS } from "rot-js/lib/index";
 import Simple from "rot-js/lib/scheduler/simple";
 
 import { Player } from "./player";
 import { Point } from "./point";
-import { Symbol } from "./symbol";
+import { Glyph } from "./glyph";
 import { Actor } from "./actor";
 import { Pedro } from "./pedro";
 import { GameState } from "./game-state";
 import { StatusLine } from "./status-line";
+import { MessageLog } from "./message-log";
 
 export class Game {
     private display: Display;
     private scheduler: Simple;
-    private map: { [key: string]: Symbol };
+    private map: { [key: string]: Glyph };
     private freeCells: string[];
     private statusLine: StatusLine;
+    private messageLog: MessageLog;
 
     private player: Player;
     private pedro: Pedro;
@@ -22,18 +24,21 @@ export class Game {
     private gameSize: { width: number, height: number };
     private mapSize: { width: number, height: number };
     private statusLinePosition: Point;
-    private pineappleKey: string;
+    private actionLogPosition: Point;
+    private processInputCallback: (event: KeyboardEvent) => Promise<any>;
 
+    private pineappleKey: string;
     private foregroundColor = "white";
     private backgroundColor = "black";
-    private floor = new Symbol(".");
-    private box = new Symbol("*");
+    private floor = new Glyph(".");
+    private box = new Glyph("*");
     private maximumBoxes = 10;
 
     constructor() {
         this.gameSize = { width: 75, height: 25 };
-        this.mapSize = { width: this.gameSize.width, height: this.gameSize.height - 3 };
-        this.statusLinePosition = new Point(0, this.gameSize.height - 3);
+        this.mapSize = { width: this.gameSize.width, height: this.gameSize.height - 4 };
+        this.statusLinePosition = new Point(0, this.gameSize.height - 4);
+        this.actionLogPosition = new Point(0, this.gameSize.height - 3);
 
         this.display = new Display({
             width: this.gameSize.width,
@@ -46,21 +51,25 @@ export class Game {
         this.mainLoop();
     }
 
-    draw(position: Point, symbol: Symbol): void {
-        let foreground = symbol.foregroundColor || this.foregroundColor;
-        let background = symbol.backgroundColor || this.backgroundColor;
-        this.display.draw(position.x, position.y, symbol.character, foreground, background);
+    draw(position: Point, glyph: Glyph): void {
+        let foreground = glyph.foregroundColor || this.foregroundColor;
+        let background = glyph.backgroundColor || this.backgroundColor;
+        this.display.draw(position.x, position.y, glyph.character, foreground, background);
     }
 
-    drawText(x: number, y: number, text: string, maxWidth?: number) {
-        this.display.drawText(x, y, text, maxWidth);
+    drawText(position: Point, text: string, maxWidth?: number): void {
+        this.display.drawText(position.x, position.y, text, maxWidth);
+    }
+
+    appendText(text: string): void {
+        this.messageLog.appendText(text);
     }
 
     mapIsPassable(x: number, y: number): boolean {
         return (x + "," + y) in this.map;
     }
 
-    getCharacterAt(key: string): Symbol {
+    getGlyphAt(key: string): Glyph {
         return this.map[key];
     }
 
@@ -70,17 +79,17 @@ export class Game {
 
     checkBox(key: string): boolean {
         if (this.map[key] !== this.box) {
-            alert("There is no box here!");
+            this.messageLog.appendText("There is no box here!");
             return;
         }
 
         // TODO update status line
 
         if (key === this.pineappleKey) {
-            alert("Hooray! You found a pineapple.");
+            this.messageLog.appendText("Hooray! You found a pineapple.");
             return true;
         } else {
-            alert("This box is empty.");
+            this.messageLog.appendText("This box is empty.");
         }
     }
 
@@ -91,7 +100,6 @@ export class Game {
         this.display.clear();
         this.generateMap();
         this.generateBoxes();
-        this.drawMap();
 
         this.player = this.createBeing(Player);
         this.pedro = this.createBeing(Pedro);
@@ -100,6 +108,9 @@ export class Game {
         this.scheduler.add(this.pedro, true);
 
         this.createStatusLine();
+        this.createActionLog();
+
+        this.drawPanel();
     }
 
     private async mainLoop(): Promise<any> {
@@ -113,15 +124,42 @@ export class Game {
             gameState = await actor.act();
             if (actor.isPlayer) {
                 this.statusLine.turns += 1;
-                this.statusLine.draw();
             }
+
+            this.drawPanel();
 
             if (gameState) {
                 if (gameState.isGameOver) {
+                    await this.waitForInput();
                     this.startNewGame();
                 }
             }
         }
+    }
+
+    private drawPanel(): void {
+        this.display.clear();
+        this.drawMap();
+        this.statusLine.draw();
+        this.messageLog.draw();
+        this.draw(this.player.position, this.player.glyph);
+        this.draw(this.pedro.position, this.pedro.glyph);
+    }
+
+    private waitForInput(): Promise<any> {
+        return new Promise(resolve => {
+            this.processInputCallback = (event: KeyboardEvent) => this.processInput(event, resolve);
+            window.addEventListener("keydown", this.processInputCallback);
+        });
+    }
+
+    private processInput(event: KeyboardEvent, resolve: (value?: any) => void): Promise<any> {
+        let code = event.keyCode;
+        if (code === KEYS.VK_SPACE || code === KEYS.VK_RETURN) {
+            window.removeEventListener("keydown", this.processInputCallback);
+            resolve();
+        }
+        return;
     }
 
     private generateMap(): void {
@@ -157,15 +195,18 @@ export class Game {
     }
 
     private createStatusLine(): void {
-        this.statusLine = new StatusLine(this, this.statusLinePosition.x, this.statusLinePosition.y, this.gameSize.width, { maxBoxes: this.maximumBoxes });
-        this.statusLine.draw();
+        this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
+    }
+
+    private createActionLog(): void {
+        this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
     }
 
     private drawMap(): void {
         let point: Point;
         for (let key in this.map) {
             point = this.mapKeyToPoint(key);
-            this.draw(point, this.getCharacterAt(key));
+            this.draw(point, this.getGlyphAt(key));
         }
     }
 

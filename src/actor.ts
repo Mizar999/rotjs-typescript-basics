@@ -1,10 +1,10 @@
 import { GameState } from "./game-state";
 import { Point } from "./point";
-import { Symbol } from "./symbol";
+import { Glyph } from "./glyph";
 
 export interface Actor {
     position: Point;
-    symbol: Symbol;
+    glyph: Glyph;
     isPlayer: boolean;
 
     act(): Promise<GameState>;
