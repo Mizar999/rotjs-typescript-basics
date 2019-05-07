@@ -85,24 +85,28 @@ export class Game {
     }
 
     checkBox(key: string): void {
-        if (this.map[key].type !== Tile.box.type) {
-            if (this.map[key].type === Tile.searchedBox.type) {
-                this.messageLog.appendText("This box is still empty.");
-            } else {
+        switch (this.map[key].type) {
+            case Tile.box.type:
+                this.map[key] = Tile.searchedBox;
+                this.statusLine.boxes += 1;
+                if (key === this.pineappleKey) {
+                    this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
+                    this.messageLog.appendText("Hooray! You found a pineapple.");
+                    this.gameState.foundPineapple = true;
+                } else {
+                    this.messageLog.appendText("This box is empty.");
+                }
+                break;
+            case Tile.searchedBox.type:
+                this.map[key] = Tile.destroyedBox;
+                this.messageLog.appendText("You destroy this box!");
+                break;
+            case Tile.destroyedBox.type:
+                this.messageLog.appendText("This box is destroyed.");
+                break;
+            default:
                 this.messageLog.appendText("There is no box here!");
-            }
-            return;
-        }
-
-        this.statusLine.boxes += 1;
-        this.map[key] = Tile.searchedBox;
-
-        if (key === this.pineappleKey) {
-            this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
-            this.messageLog.appendText("Hooray! You found a pineapple.");
-            this.gameState.foundPineapple = true;
-        } else {
-            this.messageLog.appendText("This box is empty.");
+                break;
         }
     }
 
