@@ -4,23 +4,24 @@ import Simple from "rot-js/lib/scheduler/simple";
 import { Player } from "./player";
 import { Point } from "./point";
 import { Glyph } from "./glyph";
-import { Actor } from "./actor";
+import { Actor, ActorType } from "./actor";
 import { Pedro } from "./pedro";
 import { GameState } from "./game-state";
 import { StatusLine } from "./status-line";
 import { MessageLog } from "./message-log";
 import { InputUtility } from "./input-utility";
+import { Tile } from "./tile";
 
 export class Game {
     private display: Display;
     private scheduler: Simple;
-    private map: { [key: string]: Glyph };
+    private map: { [key: string]: Tile };
     private freeCells: string[];
     private statusLine: StatusLine;
     private messageLog: MessageLog;
 
     private player: Player;
-    private pedro: Pedro;
+    private enemies: Actor[];
 
     private gameSize: { width: number, height: number };
     private mapSize: { width: number, height: number };
@@ -29,11 +30,9 @@ export class Game {
     private gameState: GameState;
 
     private pineappleKey: string;
+    private pedroColor: string;
     private foregroundColor = "white";
     private backgroundColor = "black";
-    private floor = new Glyph(".");
-    private newBox = new Glyph("#", "#654321");
-    private searchedBox = new Glyph("#", "#666");
     private maximumBoxes = 10;
 
     constructor() {
@@ -52,6 +51,7 @@ export class Game {
         this.gameState = new GameState();
         this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
         this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
+        this.pedroColor = new Pedro(this, new Point(0, 0)).glyph.foregroundColor;
 
         this.startNewGame();
         this.mainLoop();
@@ -71,8 +71,13 @@ export class Game {
         return (x + "," + y) in this.map;
     }
 
-    getGlyphAt(key: string): Glyph {
-        return this.map[key];
+    occupiedByEnemy(x: number, y: number): boolean {
+        for (let enemy of this.enemies) {
+            if (enemy.position.x == x && enemy.position.y == y) {
+                return true;
+            }
+        }
+        return false;
     }
 
     getPlayerPosition(): Point {
@@ -80,8 +85,8 @@ export class Game {
     }
 
     checkBox(key: string): void {
-        if (this.map[key] !== this.newBox) {
-            if (this.map[key] === this.searchedBox) {
+        if (this.map[key].type !== Tile.box.type) {
+            if (this.map[key].type === Tile.searchedBox.type) {
                 this.messageLog.appendText("This box is still empty.");
             } else {
                 this.messageLog.appendText("There is no box here!");
@@ -90,7 +95,7 @@ export class Game {
         }
 
         this.statusLine.boxes += 1;
-        this.map[key] = this.searchedBox;
+        this.map[key] = Tile.searchedBox;
 
         if (key === this.pineappleKey) {
             this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
@@ -103,7 +108,7 @@ export class Game {
 
     catchPlayer(): void {
         this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
-        this.messageLog.appendText(`Game over - you were captured by %c{${this.pedro.glyph.foregroundColor}}Pedro%c{}!`);
+        this.messageLog.appendText(`Game over - you were captured by %c{${this.pedroColor}}Pedro%c{}!`);
         this.gameState.playerWasCaught = true;
     }
 
@@ -115,16 +120,19 @@ export class Game {
     private startNewGame(): void {
         this.map = {};
         this.freeCells = [];
+        this.enemies = [];
 
         this.display.clear();
         this.generateMap();
         this.generateBoxes();
 
         this.player = this.createBeing(Player);
-        this.pedro = this.createBeing(Pedro);
+        this.enemies.push(this.createBeing(Pedro));
         this.scheduler = new Scheduler.Simple();
         this.scheduler.add(this.player, true);
-        this.scheduler.add(this.pedro, true);
+        for (let enemy of this.enemies) {
+            this.scheduler.add(enemy, true);
+        }
 
         this.statusLine.boxes = 0;
         this.messageLog.clear();
@@ -145,7 +153,7 @@ export class Game {
             }
 
             await actor.act();
-            if (actor.type === "player") {
+            if (actor.type === ActorType.player) {
                 this.statusLine.turns += 1;
             }
             if (this.gameState.foundPineapple) {
@@ -170,7 +178,9 @@ export class Game {
         this.statusLine.draw();
         this.messageLog.draw();
         this.draw(this.player.position, this.player.glyph);
-        this.draw(this.pedro.position, this.pedro.glyph);
+        for (let enemy of this.enemies) {
+            this.draw(enemy.position, enemy.glyph);
+        }
     }
 
     private handleInput(event: KeyboardEvent): boolean {
@@ -180,9 +190,9 @@ export class Game {
 
     private writeHelpMessage(): void {
         let helpMessage = [
-            `Find the pineapple in one of the %c{${this.newBox.foregroundColor}}boxes%c{}.`,
-            `Move with numpad, search %c{${this.newBox.foregroundColor}}box%c{} with 'spacebar' or 'return'.`,
-            `Watch out for %c{${this.pedro.glyph.foregroundColor}}Pedro%c{}!`
+            `Find the pineapple in one of the %c{${Tile.box.glyph.foregroundColor}}boxes%c{}.`,
+            `Move with numpad, search %c{${Tile.box.glyph.foregroundColor}}box%c{} with 'spacebar' or 'return'.`,
+            `Watch out for %c{${this.pedroColor}}Pedro%c{}!`
         ];
 
         for (let index = helpMessage.length - 1; index >= 0; --index) {
@@ -201,14 +211,14 @@ export class Game {
         }
         let key = x + "," + y;
         this.freeCells.push(key);
-        this.map[key] = this.floor;
+        this.map[key] = Tile.floor;
     }
 
     private generateBoxes(): void {
         let key: string;
         for (let boxes = 0; boxes < this.maximumBoxes; ++boxes) {
             key = this.getRandomFreeCell();
-            this.map[key] = this.newBox;
+            this.map[key] = Tile.box;
             if (!boxes) {
                 this.pineappleKey = key;
             }
@@ -230,7 +240,7 @@ export class Game {
         let point: Point;
         for (let key in this.map) {
             point = this.mapKeyToPoint(key);
-            this.draw(point, this.getGlyphAt(key));
+            this.draw(point, this.map[key].glyph);
         }
     }
 

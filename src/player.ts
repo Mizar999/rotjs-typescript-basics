@@ -1,8 +1,7 @@
 import { KEYS, DIRS } from "rot-js";
 import { Game } from "./game";
-import { Actor } from "./actor";
+import { Actor, ActorType } from "./actor";
 import { Point } from "./point";
-import { GameState } from "./game-state";
 import { Glyph } from "./glyph";
 import { InputUtility } from "./input-utility";
 
@@ -13,7 +12,7 @@ export class Player implements Actor {
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("@", "#ff0");
-        this.type = "player";
+        this.type = ActorType.player;
 
         this.keyMap = {};
         this.keyMap[KEYS.VK_NUMPAD8] = 0; // up

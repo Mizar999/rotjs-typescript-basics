@@ -1,9 +1,8 @@
 import { Path } from "rot-js";
 import { Game } from "./game";
-import { Actor } from "./actor";
+import { Actor, ActorType } from "./actor";
 import { Point } from "./point";
 import { Glyph } from "./glyph";
-import { GameState } from "./game-state";
 
 export class Pedro implements Actor {
     glyph: Glyph;
@@ -12,7 +11,7 @@ export class Pedro implements Actor {
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("P", "#f00", "");
-        this.type = "pedro";
+        this.type = ActorType.pedro;
     }
 
     act(): Promise<any> {
@@ -22,12 +21,15 @@ export class Pedro implements Actor {
         this.path = [];
         astar.compute(this.position.x, this.position.y, this.pathCallback.bind(this));
         this.path.shift(); // remove Pedros position
-        if (this.path.length <= 1) {
-            this.game.catchPlayer();
+        
+        if (this.path.length > 0) {
+            if (!this.game.occupiedByEnemy(this.path[0].x, this.path[0].y)) {
+                this.position = new Point(this.path[0].x, this.path[0].y);
+            }
         }
 
-        if (this.path.length > 0) {
-            this.position = new Point(this.path[0].x, this.path[0].y);
+        if (this.position.x == playerPosition.x && this.position.y == playerPosition.y) {
+            this.game.catchPlayer();
         }
 
         return Promise.resolve();
