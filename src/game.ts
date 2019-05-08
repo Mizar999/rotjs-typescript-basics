@@ -1,4 +1,4 @@
-import { Display, Map, RNG, Scheduler, KEYS } from "rot-js/lib/index";
+import { Display, Scheduler, KEYS, RNG } from "rot-js/lib/index";
 import Simple from "rot-js/lib/scheduler/simple";
 
 import { Player } from "./player";
@@ -11,12 +11,13 @@ import { StatusLine } from "./status-line";
 import { MessageLog } from "./message-log";
 import { InputUtility } from "./input-utility";
 import { Tile } from "./tile";
+import { Map } from "./map";
+import { TinyPedro } from "./tiny-pedro";
 
 export class Game {
     private display: Display;
     private scheduler: Simple;
-    private map: { [key: string]: Tile };
-    private freeCells: string[];
+    private map: Map;
     private statusLine: StatusLine;
     private messageLog: MessageLog;
 
@@ -29,7 +30,7 @@ export class Game {
     private actionLogPosition: Point;
     private gameState: GameState;
 
-    private pineappleKey: string;
+    private pineapplePoint: Point;
     private pedroColor: string;
     private foregroundColor = "white";
     private backgroundColor = "black";
@@ -49,11 +50,12 @@ export class Game {
         document.body.appendChild(this.display.getContainer());
 
         this.gameState = new GameState();
+        this.map = new Map(this);
         this.statusLine = new StatusLine(this, this.statusLinePosition, this.gameSize.width, { maxBoxes: this.maximumBoxes });
         this.messageLog = new MessageLog(this, this.actionLogPosition, this.gameSize.width, 3);
         this.pedroColor = new Pedro(this, new Point(0, 0)).glyph.foregroundColor;
 
-        this.startNewGame();
+        this.initializeGame();
         this.mainLoop();
     }
 
@@ -68,7 +70,7 @@ export class Game {
     }
 
     mapIsPassable(x: number, y: number): boolean {
-        return (x + "," + y) in this.map;
+        return this.map.isPassable(x, y);
     }
 
     occupiedByEnemy(x: number, y: number): boolean {
@@ -84,12 +86,12 @@ export class Game {
         return this.player.position;
     }
 
-    checkBox(key: string): void {
-        switch (this.map[key].type) {
+    checkBox(x: number, y: number): void {
+        switch (this.map.getTileType(x, y)) {
             case Tile.box.type:
-                this.map[key] = Tile.searchedBox;
+                this.map.setTile(x, y, Tile.searchedBox);
                 this.statusLine.boxes += 1;
-                if (key === this.pineappleKey) {
+                if (this.pineapplePoint.x == x && this.pineapplePoint.y == y) {
                     this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
                     this.messageLog.appendText("Hooray! You found a pineapple.");
                     this.gameState.foundPineapple = true;
@@ -98,11 +100,11 @@ export class Game {
                 }
                 break;
             case Tile.searchedBox.type:
-                this.map[key] = Tile.destroyedBox;
+                this.map.setTile(x, y, Tile.destroyedBox);
                 this.messageLog.appendText("You destroy this box!");
                 break;
             case Tile.destroyedBox.type:
-                this.messageLog.appendText("This box is destroyed.");
+                this.messageLog.appendText("This box is already destroyed.");
                 break;
             default:
                 this.messageLog.appendText("There is no box here!");
@@ -110,40 +112,63 @@ export class Game {
         }
     }
 
-    catchPlayer(): void {
+    destroyBox(actor: Actor, x: number, y: number): void {
+        switch (this.map.getTileType(x, y)) {
+            case Tile.box.type:
+            case Tile.searchedBox.type:
+                this.map.setTile(x, y, Tile.destroyedBox);
+                if (this.pineapplePoint.x == x && this.pineapplePoint.y == y) {
+                    this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
+                    this.messageLog.appendText(`Game over - ${this.getActorName(actor)} detroyed the box with the pineapple.`);
+                    this.gameState.pineappleWasDestroyed = true;
+                } else {
+                    this.messageLog.appendText(`${this.getActorName(actor)} detroyed a box.`);
+                }
+                break;
+            case Tile.destroyedBox.type:
+                this.messageLog.appendText("This box is already destroyed.");
+                break;
+            default:
+                this.messageLog.appendText("There is no box here!");
+                break;
+        }
+    }
+
+    catchPlayer(actor: Actor): void {
         this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
-        this.messageLog.appendText(`Game over - you were captured by %c{${this.pedroColor}}Pedro%c{}!`);
+        this.messageLog.appendText(`Game over - you were captured by ${this.getActorName(actor)}!`);
         this.gameState.playerWasCaught = true;
     }
 
-    updateGameState(stateUpdate: any): void {
-        this.gameState = stateUpdate.foundPineapple || this.gameState.foundPineapple;
-        this.gameState = stateUpdate.playerWasCaught || this.gameState.playerWasCaught;
+    getTileType(x: number, y: number): string {
+        return this.map.getTileType(x, y);
     }
 
-    private startNewGame(): void {
-        this.map = {};
-        this.freeCells = [];
-        this.enemies = [];
+    getRandomTilePositions(type: string, quantity: number = 1): Point[] {
+        return this.map.getRandomTilePositions(type, quantity);
+    }
 
+    private initializeGame(): void {
         this.display.clear();
-        this.generateMap();
-        this.generateBoxes();
 
-        this.player = this.createBeing(Player);
-        this.enemies.push(this.createBeing(Pedro));
+        this.messageLog.clear();
+        if (!this.gameState.isGameOver() || this.gameState.doRestartGame()) {
+            this.resetStatusLine();
+            this.writeHelpMessage();
+        } else {
+            this.statusLine.boxes = 0;
+        }
+        this.gameState.reset();
+
+        this.map.generateMap(this.mapSize.width, this.mapSize.height);
+        this.generateBoxes();
+        this.createBeings();
+
         this.scheduler = new Scheduler.Simple();
         this.scheduler.add(this.player, true);
         for (let enemy of this.enemies) {
             this.scheduler.add(enemy, true);
         }
-
-        this.statusLine.boxes = 0;
-        this.messageLog.clear();
-        if (!this.gameState.isGameOver() || this.gameState.playerWasCaught) {
-            this.writeHelpMessage();
-        }
-        this.gameState.reset();
 
         this.drawPanel();
     }
@@ -168,17 +193,14 @@ export class Game {
 
             if (this.gameState.isGameOver()) {
                 await InputUtility.waitForInput(this.handleInput.bind(this));
-                if (this.gameState.playerWasCaught) {
-                    this.resetStatusLine();
-                }
-                this.startNewGame();
+                this.initializeGame();
             }
         }
     }
 
     private drawPanel(): void {
         this.display.clear();
-        this.drawMap();
+        this.map.draw();
         this.statusLine.draw();
         this.messageLog.draw();
         this.draw(this.player.position, this.player.glyph);
@@ -204,60 +226,43 @@ export class Game {
         }
     }
 
-    private generateMap(): void {
-        let digger = new Map.Digger(this.mapSize.width, this.mapSize.height);
-        digger.create(this.diggerCallback.bind(this));
-    }
-
-    private diggerCallback(x: number, y: number, wall: number): void {
-        if (wall) {
-            return;
+    private getActorName(actor: Actor): string {
+        switch (actor.type) {
+            case ActorType.player:
+                return `Player`;
+            case ActorType.pedro:
+                return `%c{${actor.glyph.foregroundColor}}Pedro%c{}`;
+            case ActorType.tinyPedro:
+                return `%c{${actor.glyph.foregroundColor}}Pedros son%c{}`;
+            default:
+                return "unknown enemy";
         }
-        let key = x + "," + y;
-        this.freeCells.push(key);
-        this.map[key] = Tile.floor;
     }
 
     private generateBoxes(): void {
-        let key: string;
-        for (let boxes = 0; boxes < this.maximumBoxes; ++boxes) {
-            key = this.getRandomFreeCell();
-            this.map[key] = Tile.box;
-            if (!boxes) {
-                this.pineappleKey = key;
-            }
+        let positions = this.map.getRandomTilePositions(Tile.floor.type, this.maximumBoxes);
+        for (let position of positions) {
+            this.map.setTile(position.x, position.y, Tile.box);
         }
+        this.pineapplePoint = positions[0];
     }
 
-    private createBeing(what: any): any {
-        let key = this.getRandomFreeCell();
-        let point = this.mapKeyToPoint(key);
-        return new what(this, point);
+    private createBeings(): void {
+        let numberOfEnemies = 1 + Math.floor(this.statusLine.pineapples / 3.0);
+        this.enemies = [];
+        let positions = this.map.getRandomTilePositions(Tile.floor.type, 1 + numberOfEnemies);
+        this.player = new Player(this, positions.splice(0, 1)[0]);
+        for (let position of positions) {
+            if (this.statusLine.pineapples == 0 || RNG.getUniform() < 0.5) {
+                this.enemies.push(new Pedro(this, position));
+            } else {
+                this.enemies.push(new TinyPedro(this, position));
+            }
+        }
     }
 
     private resetStatusLine(): void {
         this.statusLine.reset();
         this.statusLine.maxBoxes = this.maximumBoxes;
-    }
-
-    private drawMap(): void {
-        let point: Point;
-        for (let key in this.map) {
-            point = this.mapKeyToPoint(key);
-            this.draw(point, this.map[key].glyph);
-        }
-    }
-
-    private getRandomFreeCell(): string {
-        if (this.freeCells.length == 0) {
-            return;
-        }
-        let index = Math.floor(RNG.getUniform() * this.freeCells.length);
-        return this.freeCells.splice(index, 1)[0];
-    }
-
-    private mapKeyToPoint(key: string): Point {
-        let parts = key.split(",");
-        return new Point(parseInt(parts[0]), parseInt(parts[1]));
     }
 }
