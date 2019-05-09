@@ -7,18 +7,18 @@ import { Tile } from "./tile";
 
 export class TinyPedro implements Actor {
     glyph: Glyph;
-    type: string;
+    type: ActorType;
     private target: Point;
     private path: Point[];
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("p", "#00f", "");
-        this.type = ActorType.tinyPedro;
+        this.type = ActorType.TinyPedro;
     }
 
     act(): Promise<any> {
         let playerPosition = this.game.getPlayerPosition();
-        if (this.position.x == playerPosition.x && this.position.y == playerPosition.y) {
+        if (this.position.equals(playerPosition)) {
             this.game.catchPlayer(this);
         }
 
@@ -37,9 +37,9 @@ export class TinyPedro implements Actor {
             }
         }
 
-        if (this.position.x == playerPosition.x && this.position.y == playerPosition.y) {
+        if (this.position.equals(playerPosition)) {
             this.game.catchPlayer(this);
-        } else if (this.position.x == this.target.x && this.position.y == this.target.y) {
+        } else if (this.position.equals(this.target)) {
             this.game.destroyBox(this, this.target.x, this.target.y);
             this.target = undefined;
         }

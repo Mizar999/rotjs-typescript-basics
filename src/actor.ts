@@ -1,17 +1,16 @@
-import { GameState } from "./game-state";
 import { Point } from "./point";
 import { Glyph } from "./glyph";
 
-export class ActorType {
-    static readonly player = "player";
-    static readonly pedro = "pedro";
-    static readonly tinyPedro = "tinyPedro";
+export const enum ActorType {
+    Player,
+    Pedro,
+    TinyPedro
 }
 
 export interface Actor {
     position: Point;
     glyph: Glyph;
-    type: string;
+    type: ActorType;
 
     act(): Promise<any>;
 }

@@ -22,7 +22,7 @@ export class MessageLog {
     draw(): void {
         let linePosition = new Point(this.position.x, this.position.y);
         for (let index = 0; index < this.maxLines && index < this.lines.length; ++index) {
-            this.game.drawText(linePosition, this.lines[index]);
+            this.game.drawText(linePosition, this.lines[index], this.maxWidth);
             ++linePosition.y;
         }
     }

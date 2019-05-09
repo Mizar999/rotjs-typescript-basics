@@ -10,7 +10,7 @@ import { GameState } from "./game-state";
 import { StatusLine } from "./status-line";
 import { MessageLog } from "./message-log";
 import { InputUtility } from "./input-utility";
-import { Tile } from "./tile";
+import { Tile, TileType } from "./tile";
 import { Map } from "./map";
 import { TinyPedro } from "./tiny-pedro";
 
@@ -114,8 +114,8 @@ export class Game {
 
     destroyBox(actor: Actor, x: number, y: number): void {
         switch (this.map.getTileType(x, y)) {
-            case Tile.box.type:
-            case Tile.searchedBox.type:
+            case TileType.Box:
+            case TileType.SearchedBox:
                 this.map.setTile(x, y, Tile.destroyedBox);
                 if (this.pineapplePoint.x == x && this.pineapplePoint.y == y) {
                     this.messageLog.appendText("Continue with 'spacebar' or 'return'.");
@@ -125,7 +125,7 @@ export class Game {
                     this.messageLog.appendText(`${this.getActorName(actor)} detroyed a box.`);
                 }
                 break;
-            case Tile.destroyedBox.type:
+            case TileType.DestroyedBox:
                 this.messageLog.appendText("This box is already destroyed.");
                 break;
             default:
@@ -140,11 +140,11 @@ export class Game {
         this.gameState.playerWasCaught = true;
     }
 
-    getTileType(x: number, y: number): string {
+    getTileType(x: number, y: number): TileType {
         return this.map.getTileType(x, y);
     }
 
-    getRandomTilePositions(type: string, quantity: number = 1): Point[] {
+    getRandomTilePositions(type: TileType, quantity: number = 1): Point[] {
         return this.map.getRandomTilePositions(type, quantity);
     }
 
@@ -162,8 +162,8 @@ export class Game {
 
         this.map.generateMap(this.mapSize.width, this.mapSize.height);
         this.generateBoxes();
-        this.createBeings();
 
+        this.createBeings();
         this.scheduler = new Scheduler.Simple();
         this.scheduler.add(this.player, true);
         for (let enemy of this.enemies) {
@@ -182,7 +182,7 @@ export class Game {
             }
 
             await actor.act();
-            if (actor.type === ActorType.player) {
+            if (actor.type === ActorType.Player) {
                 this.statusLine.turns += 1;
             }
             if (this.gameState.foundPineapple) {
@@ -228,19 +228,19 @@ export class Game {
 
     private getActorName(actor: Actor): string {
         switch (actor.type) {
-            case ActorType.player:
+            case ActorType.Player:
                 return `Player`;
-            case ActorType.pedro:
+            case ActorType.Pedro:
                 return `%c{${actor.glyph.foregroundColor}}Pedro%c{}`;
-            case ActorType.tinyPedro:
+            case ActorType.TinyPedro:
                 return `%c{${actor.glyph.foregroundColor}}Pedros son%c{}`;
             default:
-                return "unknown enemy";
+                return "unknown actor";
         }
     }
 
     private generateBoxes(): void {
-        let positions = this.map.getRandomTilePositions(Tile.floor.type, this.maximumBoxes);
+        let positions = this.map.getRandomTilePositions(TileType.Floor, this.maximumBoxes);
         for (let position of positions) {
             this.map.setTile(position.x, position.y, Tile.box);
         }
@@ -250,10 +250,10 @@ export class Game {
     private createBeings(): void {
         let numberOfEnemies = 1 + Math.floor(this.statusLine.pineapples / 3.0);
         this.enemies = [];
-        let positions = this.map.getRandomTilePositions(Tile.floor.type, 1 + numberOfEnemies);
+        let positions = this.map.getRandomTilePositions(TileType.Floor, 1 + numberOfEnemies);
         this.player = new Player(this, positions.splice(0, 1)[0]);
         for (let position of positions) {
-            if (this.statusLine.pineapples == 0 || RNG.getUniform() < 0.5) {
+            if (this.statusLine.pineapples < 1 || RNG.getUniform() < 0.5) {
                 this.enemies.push(new Pedro(this, position));
             } else {
                 this.enemies.push(new TinyPedro(this, position));

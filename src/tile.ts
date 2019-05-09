@@ -1,10 +1,17 @@
 import { Glyph } from "./glyph";
 
-export class Tile {
-    static readonly floor = new Tile("floor", new Glyph("."));
-    static readonly box = new Tile("box", new Glyph("#", "#654321"));
-    static readonly searchedBox = new Tile("searchedBox", new Glyph("#", "#666"));
-    static readonly destroyedBox = new Tile("destroyedBox", new Glyph("x", "#555"));
+export const enum TileType {
+    Floor,
+    Box,
+    SearchedBox,
+    DestroyedBox
+}
 
-    constructor(public readonly type: string, public readonly glyph: Glyph) { }
+export class Tile {
+    static readonly floor = new Tile(TileType.Floor, new Glyph("."));
+    static readonly box = new Tile(TileType.Box, new Glyph("#", "#654321"));
+    static readonly searchedBox = new Tile(TileType.SearchedBox, new Glyph("#", "#666"));
+    static readonly destroyedBox = new Tile(TileType.DestroyedBox, new Glyph("x", "#555"));
+
+    constructor(public readonly type: TileType, public readonly glyph: Glyph) { }
 }

@@ -1,7 +1,7 @@
 import { Map as RotJsMap } from "rot-js/lib/index";
 import { RNG } from "rot-js";
 import { Game } from "./game";
-import { Tile } from "./tile";
+import { Tile, TileType } from "./tile";
 import { Point } from "./point";
 
 export class Map {
@@ -21,7 +21,7 @@ export class Map {
         this.map[this.coordinatesToKey(x, y)] = tile;
     }
 
-    getRandomTilePositions(type: string, quantity: number = 1): Point[] {
+    getRandomTilePositions(type: TileType, quantity: number = 1): Point[] {
         let buffer: Point[] = [];
         let result: Point[] = [];
         for (let key in this.map) {
@@ -38,7 +38,7 @@ export class Map {
         return result;
     }
 
-    getTileType(x: number, y: number): string {
+    getTileType(x: number, y: number): TileType {
         return this.map[this.coordinatesToKey(x, y)].type;
     }
 

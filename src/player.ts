@@ -7,12 +7,12 @@ import { InputUtility } from "./input-utility";
 
 export class Player implements Actor {
     glyph: Glyph;
-    type: string;
+    type: ActorType;
     private keyMap: { [key: number]: number }
 
     constructor(private game: Game, public position: Point) {
         this.glyph = new Glyph("@", "#ff0");
-        this.type = ActorType.player;
+        this.type = ActorType.Player;
 
         this.keyMap = {};
         this.keyMap[KEYS.VK_NUMPAD8] = 0; // up
