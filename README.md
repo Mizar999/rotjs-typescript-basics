@@ -10,66 +10,18 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
 
 ## Project setup
 
-- Init npm and install necessary packages
+After cloning the repository:
+
+- Install necessary packages
 
     ```powershell
-    npm init -y
-    npm install --save-dev typescript rot-js webpack webpack-cli ts-loader live-server npm-run-all
-    ```
-
-- Create **Webpack** configuration `webpack.config.js`:
-
-    ```javascript
-    const path = require('path');
-
-    module.exports = {
-    entry: './src/app.ts',
-    module: {
-        rules:[{
-            test: /\.tsx?$/,
-            use: 'ts-loader',
-            exclude: /node_modules/
-        }]
-    },
-    resolve: {
-        extensions: ['.ts', '.tsx', '.js']
-    },
-    output: {
-        filename: 'app.js',
-        path: path.resolve(__dirname, 'dist')
-    },
-    mode: 'development'
-    };
-    ```
-
-- Webpack will get the sources from `src/app.ts` and collect everything in `dist/app.js` file
-- Create **TypeScript** configuration `tsconfig.json`:
-
-    ```json
-    {
-        "compilerOptions": {
-            "target": "es5"
-        },
-        "include": [
-            "src/*"
-        ]
-    }
-    ```
-
-- Update the **scripts**-section of the `package.json` file:
-
-    ```json
-    "scripts": {
-        "build": "webpack",
-        "watch": "webpack --watch",
-        "serve": "live-server --port=8085"
-    }
+    npm install
     ```
 
 - To build the application run:
 
     ```powershell
-    npm run-script build
+    npm run build
     ```
 
 - To run multiple npm scripts cross platform in parallel run the following command (use the **npx** command if the packages were installed locally):
