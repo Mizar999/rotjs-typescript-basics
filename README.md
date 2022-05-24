@@ -14,7 +14,7 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
 
     ```powershell
     npm init -y
-    npm install --save-dev typescript rot-js webpack webpack-cli ts-loader live-server npm-run-all
+    npm install --save-dev typescript@4.6.4 ts-loader@9.3.0 rot-js@2.0.3 webpack@5.72.1 webpack-cli@4.9.2 http-server@14.1.0 concurrently@7.2.1
     ```
 
 - Create **Webpack** configuration `webpack.config.js`:
@@ -62,7 +62,7 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
     "scripts": {
         "build": "webpack",
         "watch": "webpack --watch",
-        "serve": "live-server --port=8085"
+        "serve": "http-server --port=8085 -c-1"
     }
     ```
 
@@ -72,22 +72,12 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
     npm run-script build
     ```
 
-- To run multiple npm scripts cross platform in parallel run the following command (use the **npx** command if the packages were installed locally):
+- To run multiple npm scripts cross platform in parallel run the following command:
 
     ```powershell
     # if globally installed
-    npm-run-all --parallel watch serve
+    concurrently npm:watch npm:serve
 
     # if locally installed
-    npx npm-run-all --parallel watch serve
-    ```
-
-- Or use the shorthand command **run-p** for parallel tasks:
-
-    ```powershell
-    # if globally installed
-    run-p watch serve
-
-    # if locally installed
-    npx run-p watch serve
+    npx concurrently npm:watch npm:serve
     ```
