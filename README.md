@@ -8,7 +8,35 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
 - [RogueBasin - rot.js Tutorial](http://www.roguebasin.roguelikedevelopment.org/index.php?title=Rot.js_tutorial)
 - [Frostlike - 7 Day Roguelike Challenge 2017 entry](https://github.com/maqqr/7drl2017)
 
-## Project setup
+## How to run
+
+After cloning the repository:
+
+- Install necessary packages
+
+    ```powershell
+    npm install
+    ```
+
+- To build the application run:
+
+    ```powershell
+    npm run build
+    ```
+
+- To run multiple npm scripts cross platform in parallel run the following command:
+
+    ```powershell
+    # if globally installed
+    concurrently npm:watch npm:serve
+
+    # if locally installed
+    npx concurrently npm:watch npm:serve
+    ```
+
+## Initial Project setup
+
+If you're interested here is my initial project setup:
 
 - Init npm and install necessary packages
 
@@ -64,20 +92,4 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
         "watch": "webpack --watch",
         "serve": "http-server --port=8085 -c-1"
     }
-    ```
-
-- To build the application run:
-
-    ```powershell
-    npm run-script build
-    ```
-
-- To run multiple npm scripts cross platform in parallel run the following command:
-
-    ```powershell
-    # if globally installed
-    concurrently npm:watch npm:serve
-
-    # if locally installed
-    npx concurrently npm:watch npm:serve
     ```
