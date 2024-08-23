@@ -42,7 +42,7 @@ If you're interested here is my initial project setup:
 
     ```powershell
     npm init -y
-    npm install --save-dev typescript@4.6.4 ts-loader@9.3.0 rot-js@2.0.3 webpack@5.72.1 webpack-cli@4.9.2 http-server@14.1.0 concurrently@7.2.1
+    npm install --save-dev typescript@4.9.4 ts-loader@9.4.2 rot-js@2.2.0 webpack@5.75.0 webpack-cli@5.0.1 http-server@14.1.1 concurrently@7.6.0
     ```
 
 - Create **Webpack** configuration `webpack.config.js`:
