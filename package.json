@@ -19,6 +19,9 @@
         "url": "https://github.com/Mizar999/rotjs-typescript-basics/issues"
     },
     "homepage": "https://github.com/Mizar999/rotjs-typescript-basics#readme",
+    "overrides": {
+        "lodash": "4.18.1"
+    },
     "devDependencies": {
         "concurrently": "^7.6.0",
         "http-server": "^14.1.1",
