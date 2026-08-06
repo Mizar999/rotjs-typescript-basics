@@ -1,36 +1,15 @@
 {
-    "name": "rotjs-typescript-basics",
-    "version": "1.0.0",
-    "description": "Using the rot.js library with TypeScript in a basic example.",
-    "main": "index.js",
-    "scripts": {
-        "build": "webpack",
-        "watch": "webpack --watch",
-        "serve": "http-server --port=8085 -c-1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Mizar999/rotjs-typescript-basics.git"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/Mizar999/rotjs-typescript-basics/issues"
-    },
-    "homepage": "https://github.com/Mizar999/rotjs-typescript-basics#readme",
-    "overrides": {
-        "lodash": "4.18.1",
-        "fast-uri": "^3.1.5",
-        "shell-quote": "^1.9.0"
-    },
-    "devDependencies": {
-        "concurrently": "^7.6.0",
-        "http-server": "^14.1.1",
-        "rot-js": "^2.2.0",
-        "ts-loader": "^9.4.2",
-        "typescript": "^4.9.4",
-        "webpack": "^5.105.1",
-        "webpack-cli": "^5.0.1"
-    }
+  "name": "rotjs-typescript-basics",
+  "version": "1.0.0",
+  "description": "Using the rot.js library with TypeScript in a basic example.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "rot-js": "^2.2.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0"
+  }
 }
