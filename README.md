@@ -1,6 +1,10 @@
-# rot.js TypeScript basics
+# rot.js TypeScript Basics
 
-A basic roguelike example built with rot.js and TypeScript. Playable at [https://mizar999.github.io/rotjs-typescript-basics/](https://mizar999.github.io/rotjs-typescript-basics/)
+A basic roguelike example built with **rot.js**, **TypeScript**, and **Vite**.
+
+**Playable Demo:** [https://mizar999.github.io/rotjs-typescript-basics/](https://mizar999.github.io/rotjs-typescript-basics/)
+
+---
 
 ## Resources
 
@@ -8,88 +12,102 @@ A basic roguelike example built with rot.js and TypeScript. Playable at [https:/
 - [RogueBasin - rot.js Tutorial](http://www.roguebasin.roguelikedevelopment.org/index.php?title=Rot.js_tutorial)
 - [Frostlike - 7 Day Roguelike Challenge 2017 entry](https://github.com/maqqr/7drl2017)
 
-## How to run
+---
 
-After cloning the repository:
+## Development
 
-- Install necessary packages
+To clone and develop this project locally:
 
-    ```powershell
-    npm install
-    ```
+```powershell
+git clone https://github.com/Mizar999/rotjs-typescript-basics.git
+cd rotjs-typescript-basics
+npm install
+npm run dev
+```
 
-- To build the application run:
+### Available Scripts
 
-    ```powershell
-    npm run build
-    ```
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Starts the Vite dev server with instant Hot Module Replacement (HMR). |
+| `npm run build` | Runs TypeScript type-checking and builds the production bundle into `dist/`. |
+| `npm run preview` | Previews the production build locally. |
 
-- To run multiple npm scripts cross platform in parallel run the following command:
+---
 
-    ```powershell
-    # if globally installed
-    concurrently npm:watch npm:serve
+## New Project Setup from Scratch
 
-    # if locally installed
-    npx concurrently npm:watch npm:serve
-    ```
+If you want to set up a new rot.js project with TypeScript and Vite from scratch:
 
-## Initial Project setup
+1. **Initialize NPM project & install dependencies:**
 
-If you're interested here is my initial project setup:
+   ```powershell
+   npm init -y
+   npm install --save-dev typescript vite rot-js
+   ```
 
-- Init npm and install necessary packages
+2. **Create Vite configuration (`vite.config.ts`):**
 
-    ```powershell
-    npm init -y
-    npm install --save-dev typescript@4.9.4 ts-loader@9.4.2 rot-js@2.2.0 webpack@5.75.0 webpack-cli@5.0.1 http-server@14.1.1 concurrently@7.6.0
-    ```
+   ```typescript
+   import { defineConfig } from 'vite';
 
-- Create **Webpack** configuration `webpack.config.js`:
+   export default defineConfig({
+     base: './',
+     build: {
+       outDir: 'dist',
+     },
+   });
+   ```
 
-    ```javascript
-    const path = require('path');
+3. **Create TypeScript configuration (`tsconfig.json`):**
 
-    module.exports = {
-    entry: './src/app.ts',
-    module: {
-        rules:[{
-            test: /\.tsx?$/,
-            use: 'ts-loader',
-            exclude: /node_modules/
-        }]
-    },
-    resolve: {
-        extensions: ['.ts', '.tsx', '.js']
-    },
-    output: {
-        filename: 'app.js',
-        path: path.resolve(__dirname, 'dist')
-    },
-    mode: 'development'
-    };
-    ```
+   ```json
+   {
+     "compilerOptions": {
+       "target": "ES2020",
+       "useDefineForClassFields": true,
+       "module": "ESNext",
+       "lib": ["ES2020", "DOM", "DOM.Iterable"],
+       "skipLibCheck": true,
+       "moduleResolution": "node",
+       "allowSyntheticDefaultImports": true,
+       "strict": false,
+       "noEmit": true
+     },
+     "include": ["src"]
+   }
+   ```
 
-- Webpack will get the sources from `src/app.ts` and collect everything in `dist/app.js` file
-- Create **TypeScript** configuration `tsconfig.json`:
+4. **Create HTML Entry Point (`index.html`):**
 
-    ```json
-    {
-        "compilerOptions": {
-            "target": "es5"
-        },
-        "include": [
-            "src/*"
-        ]
-    }
-    ```
+   ```html
+   <!DOCTYPE html>
+   <html lang="en">
+     <head>
+       <meta charset="UTF-8" />
+       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+       <title>rot.js TypeScript Basics</title>
+     </head>
+     <body>
+       <script type="module" src="/src/app.ts"></script>
+     </body>
+   </html>
+   ```
 
-- Update the **scripts**-section of the `package.json` file:
+5. **Configure `package.json` scripts:**
 
-    ```json
-    "scripts": {
-        "build": "webpack",
-        "watch": "webpack --watch",
-        "serve": "http-server --port=8085 -c-1"
-    }
-    ```
+   ```json
+   "scripts": {
+     "dev": "vite",
+     "build": "tsc && vite build",
+     "preview": "vite preview"
+   }
+   ```
+
+---
+
+## Automatic Deployment (GitHub Pages)
+
+This repository uses an automated GitHub Actions workflow defined in `.github/workflows/deploy.yml`.
+
+Every push to the `main` or `master` branch automatically triggers a build and deploys the generated site directly to GitHub Pages.
